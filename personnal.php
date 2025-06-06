@@ -15,10 +15,12 @@
         exit;
     }
 
-    $sql = "SELECT per.*, cat.folder_path
+    $sql = "SELECT per.*, cat.folder_path, grp.group_name, grp.display_order
             FROM personal per
             JOIN categories cat ON per.category_id = cat.id
-            WHERE is_active = 1 AND category_id = ?";
+            JOIN personal_group grp ON per.department = grp.id
+            WHERE is_active = 1 AND category_id = ?
+            ORDER BY grp.display_order ASC, per.position ASC";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $category_id);
@@ -42,6 +44,8 @@
                 'phone' => $row['phone'],
                 'extension' => $row['extension'],
                 'image_personal_name' => $row['image_personal_name'],
+                'group_name' => $row['group_name'],
+                'display_order' => $row['display_order'],
             ];
         }
     }
