@@ -20,7 +20,7 @@
             JOIN categories cat ON per.category_id = cat.id
             JOIN personal_group grp ON per.department = grp.id
             WHERE is_active = 1 AND category_id = ?
-            ORDER BY grp.display_order ASC, per.position ASC, per.id_personal ASC";
+            ORDER BY grp.display_order ASC, per.id_personal ASC";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $category_id);
