@@ -81,18 +81,19 @@
     }
 
     if ($_GET['action'] === 'get_active_all_faqs') {
-        $sql = "SELECT id, title, description 
-                FROM faqs 
-                WHERE is_active = 1 
-                ORDER BY id ASC";
+        $sql = "SELECT f.id, f.title, f.description, f.uploaded_at, f.types_faq, 
+                    g.group_name, g.display_order
+                FROM faqs f
+                LEFT JOIN faq_group g ON f.types_faq = g.id
+                WHERE f.is_active = 1
+                ORDER BY g.display_order ASC, f.id ASC";
         $result = mysqli_query($conn, $sql);
 
-        $faqs = [];
+        $groups = [];
 
         while ($row = mysqli_fetch_assoc($result)) {
             $faq_id = $row['id'];
 
-            // ดึงไฟล์แนบของ FAQ นี้
             $file_sql = "SELECT file_name, original_name 
                         FROM faq_files 
                         WHERE faq_id = $faq_id";
@@ -107,12 +108,63 @@
                 ];
             }
 
-            // เพิ่ม key 'files' เข้าไปในแต่ละ FAQ
             $row['files'] = $files;
 
-            $faqs[] = $row;
+            $groupName = $row['group_name'] ?? 'ไม่ระบุประเภท';
+            $groupOrder = $row['display_order'] ?? 999;
+
+            if (!isset($groups[$groupName])) {
+                $groups[$groupName] = [
+                    'display_order' => $groupOrder,
+                    'faqs' => []
+                ];
+            }
+
+            $groups[$groupName]['faqs'][] = $row;
         }
 
-        echo json_encode($faqs);
+        // จัดกลุ่มให้เรียงตาม display_order
+        uasort($groups, function ($a, $b) {
+            return $a['display_order'] <=> $b['display_order'];
+        });
+
+        echo json_encode($groups);
     }
+
+
+    // if ($_GET['action'] === 'get_active_all_faqs') {
+    //     $sql = "SELECT id, title, description 
+    //             FROM faqs 
+    //             WHERE is_active = 1 
+    //             ORDER BY id ASC";
+    //     $result = mysqli_query($conn, $sql);
+
+    //     $faqs = [];
+
+    //     while ($row = mysqli_fetch_assoc($result)) {
+    //         $faq_id = $row['id'];
+
+    //         // ดึงไฟล์แนบของ FAQ นี้
+    //         $file_sql = "SELECT file_name, original_name 
+    //                     FROM faq_files 
+    //                     WHERE faq_id = $faq_id";
+    //         $file_result = mysqli_query($conn, $file_sql);
+
+    //         $files = [];
+    //         while ($file_row = mysqli_fetch_assoc($file_result)) {
+    //             $files[] = [
+    //                 'file_name' => $file_row['file_name'],
+    //                 'original_name' => $file_row['original_name'],
+    //                 'folder_path' => 'information/faqs/'
+    //             ];
+    //         }
+
+    //         // เพิ่ม key 'files' เข้าไปในแต่ละ FAQ
+    //         $row['files'] = $files;
+
+    //         $faqs[] = $row;
+    //     }
+
+    //     echo json_encode($faqs);
+    // }
 ?>
